@@ -1,0 +1,11 @@
+/node_modules/
+/public/build/
+
+.DS_Store
+
+# IDE
+.idea
+
+# machine specific
+package-lock.json
+yarn.lock
