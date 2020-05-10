@@ -22,10 +22,11 @@
   let value = '';
   let showDropDown = false;
   let suggestedItems = [];
-  let selectedIndex = 0;
+  let selectedIndex = -1;
   let isHoveringDropDown = false;
 
   function selectCurrentItem() {
+    if(selectedIndex === -1) return;
     if(suggestedItems[selectedIndex]) {
       onItemSelect(suggestedItems[selectedIndex]);
       value = '';
@@ -67,13 +68,13 @@
         if(value.length === 0) {
           selectedItems = selectedItems.slice(0, selectedItems.length - 1);
         }
-        selectedIndex = 0;
+        selectedIndex = -1;
         openDropDown();
       } break;
 
       default: {
         if(e.key.length === 1) {
-          selectedIndex = 0;
+          selectedIndex = -1;
           openDropDown();
         }
       } break;
@@ -136,7 +137,7 @@
 
     <input bind:this={input} readonly={!enableInput} bind:value={value} on:keydown={keydown} on:focus={openDropDown} on:blur={blur} {placeholder} >
 
-    <button>
+    <button tabindex="-1">
       <slot name="trigger-button">
         <i class="trigger fa fa-angle-down"></i>
       </slot>
