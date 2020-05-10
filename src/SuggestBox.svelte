@@ -8,13 +8,14 @@
   export let getSearchValue = item => item;
   export let filter = (item, value) => getSearchValue(item).toLowerCase().indexOf(value.toLowerCase()) > -1;
   export let sortComparator = (a, b) => getSearchValue(a) > getSearchValue(b) ? 1 : getSearchValue(a) < getSearchValue(b) ? -1 : 0;
-  export let onItemSelect = item => selectedItems = [...selectedItems, item];
+  export let onItemSelect = item => multiSelect ? selectedItems = [...selectedItems, item] : selectedItem = item;
   export let onNewItem = item => console.log('new item:', item);
   export let callDelay = 0;
 
   export let enableInput = true;
   export let typeAhead = true;
   export let multiSelect = true;
+  export let closeOnSelect = true;
   export let selectedItem = {};
   export let selectedItems = [];
 
@@ -32,7 +33,9 @@
     else {
       onNewItem(value);
     }
-    closeDropDown();
+    if(closeOnSelect) {
+      closeDropDown();
+    }
   }
 
   function keydown(e) {
@@ -83,6 +86,11 @@
 
   function closeDropDown() {
     showDropDown = false;
+    isHoveringDropDown = false;
+  }
+
+  function blur() {
+    !isHoveringDropDown ? closeDropDown() : null;
   }
 
   let timeoutHandle;
@@ -112,10 +120,12 @@
     selectedItems.forEach(i => selectionMap[getSearchValue(i)] = true)
   }
 
+  let input;
+
 </script>
 
 <div class="suggest-box">
-  <div class="input">
+  <div class="input" on:click={() => input.focus()}>
     <div class="selection">
       {#each selectedItems as item, index}
         <slot name="selected-item" isFirst={index === 0} isLast={index === selectedItems.length - 1}>
@@ -124,9 +134,9 @@
       {/each}
     </div>
 
-    <input readonly={!enableInput} bind:value={value} on:keydown={keydown} on:focus={openDropDown} on:blur={() => !isHoveringDropDown ? closeDropDown() : null} {placeholder} >
+    <input bind:this={input} readonly={!enableInput} bind:value={value} on:keydown={keydown} on:focus={openDropDown} on:blur={blur} {placeholder} >
 
-    <button on:click={() => showDropDown ? closeDropDown() : openDropDown()} on:blur={() => !isHoveringDropDown ? closeDropDown() : null} tabindex={-1} >
+    <button>
       <slot name="trigger-button">
         <i class="trigger fa fa-angle-down"></i>
       </slot>
@@ -141,7 +151,7 @@
         </div>
       </slot>
     {:else}
-      <div class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} >
+      <div class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1">
         {#if suggestedItems.length}
           <slot name="result-count" count={suggestedItems.length}>
             <div class="result-count">{suggestedItems.length} items found</div>
@@ -185,6 +195,7 @@
     border: 1px solid #ccc;
     padding-left: 6px;
     box-sizing: border-box;
+    outline: 0;
   }
 
   .input input {
@@ -247,6 +258,7 @@
     background: #ffffff;
     z-index: 1;
     box-sizing: border-box;
+    outline: 0;
   }
 
   .item {
@@ -258,13 +270,13 @@
     background: #fafafa;
   }
 
-  .item.current {
-    background: #fffbe6;
-    /*color: white;*/
-  }
-
   .item.selected {
     background: #cccccc;
     color: white;
+  }
+
+  .item.current {
+    background: #fffbe6;
+    color: inherit;
   }
 </style>
