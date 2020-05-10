@@ -18,6 +18,7 @@
   export let closeOnSelect = true;
   export let selectedItem = {};
   export let selectedItems = [];
+  export let itemsToShow = 7;
 
   let value = '';
   let showDropDown = false;
@@ -55,6 +56,7 @@
         openDropDown();
         if(selectedIndex < suggestedItems.length - 1) {
           selectedIndex++;
+          console.log(dropDown.children[1].clientHeight);
         }
       } break;
 
@@ -121,7 +123,7 @@
     selectedItems.forEach(i => selectionMap[getSearchValue(i)] = true)
   }
 
-  let input;
+  let input, dropDown;
 
 </script>
 
@@ -152,7 +154,7 @@
         </div>
       </slot>
     {:else}
-      <div class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1">
+      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1">
         {#if suggestedItems.length}
           <slot name="result-count" count={suggestedItems.length}>
             <div class="result-count">{suggestedItems.length} items found</div>
@@ -223,7 +225,6 @@
     width: 30px;
     color: #333;
     background-color: #f4f4f4;
-    /*border: 1px solid #ccc;*/
     border-radius: 2px;
     flex: 1;
     display: flex;
@@ -232,7 +233,6 @@
   }
 
   .result-count {
-    /*background: #aaa;*/
     color: #aaaaaa;
     font-size: 10px;
     padding: 2px 10px;
