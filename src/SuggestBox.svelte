@@ -18,7 +18,6 @@
   export let closeOnSelect = true;
   export let selectedItem = {};
   export let selectedItems = [];
-  export let itemsToShow = 7;
 
   let value = '';
   let showDropDown = false;
@@ -47,6 +46,7 @@
     switch (e.key) {
       case 'Enter':
       case 'Tab': {
+        isHoveringDropDown = false;
         selectCurrentItem();
       } break;
 
@@ -112,7 +112,7 @@
     timeoutHandle = setTimeout(async () => {
       suggestedItems = await getItems(v);
       showLoader = false;
-      if(suggestedItems.length === 1) {
+      if(typeAhead && suggestedItems.length === 1) {
         selectedIndex = 0;
         let start = input.selectionStart;
         value = getSearchValue(suggestedItems[0]);
@@ -192,7 +192,7 @@
         </div>
       </slot>
     {:else}
-      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1" on:click={() => input.focus()}>
+      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:click={() => input.focus()}>
         {#if suggestedItems.length}
           <slot name="result-count" count={suggestedItems.length}>
             <div class="result-count">{suggestedItems.length} items found</div>

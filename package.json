@@ -1,6 +1,11 @@
 {
   "name": "svelte-suggestbox",
   "version": "1.0.0",
+  "author": {
+    "email": "ascarbek@gmail.com",
+    "name": "Askarbek Zadauly"
+  },
+  "license": "MIT",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
