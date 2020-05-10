@@ -10,10 +10,6 @@
 
   let statuses = ['created', 'working', 'postponed'];
 
-  $: {
-    console.log(selectedStatus);
-  }
-
 </script>
 
 <div class="app">

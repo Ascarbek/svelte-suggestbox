@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
 
   export let placeholder = '';
 
@@ -56,7 +56,6 @@
         openDropDown();
         if(selectedIndex < suggestedItems.length - 1) {
           selectedIndex++;
-          console.log(dropDown.children[1].clientHeight);
         }
       } break;
 
@@ -77,6 +76,7 @@
       default: {
         if(e.key.length === 1) {
           selectedIndex = -1;
+          dropDown.scrollTop = 0;
           openDropDown();
         }
       } break;
@@ -125,13 +125,35 @@
 
   let input, dropDown;
 
+  async function scrollToCurrentItem(index) {
+    if(index < 0) return;
+    await tick();
+
+    const ddTop = dropDown.getBoundingClientRect().top;
+    const ddHeight = dropDown.getBoundingClientRect().height;
+
+    const itemTop = dropDown.querySelector('.current').getBoundingClientRect().top;
+    const itemHeight = dropDown.querySelector('.current').clientHeight;
+
+    if(itemTop + itemHeight > ddTop + ddHeight) {
+      dropDown.scrollTop = dropDown.scrollTop + itemTop + itemHeight - ddHeight - ddTop;
+    }
+    if(itemTop < ddTop) {
+      dropDown.scrollTop = dropDown.scrollTop - (ddTop - itemTop);
+    }
+  }
+
+  $: {
+    scrollToCurrentItem(selectedIndex);
+  }
+
 </script>
 
 <div class="suggest-box">
   <div class="input" on:click={() => input.focus()}>
     <div class="selection">
       {#each selectedItems as item, index}
-        <slot name="selected-item" isFirst={index === 0} isLast={index === selectedItems.length - 1}>
+        <slot name="selected-item" item={item} isFirst={index === 0} isLast={index === selectedItems.length - 1}>
           <div class="selected-item">{getSearchValue(item)}</div>
         </slot>
       {/each}
@@ -154,14 +176,14 @@
         </div>
       </slot>
     {:else}
-      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1">
+      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:blur={blur} tabindex="1" on:click={() => input.focus()}>
         {#if suggestedItems.length}
           <slot name="result-count" count={suggestedItems.length}>
             <div class="result-count">{suggestedItems.length} items found</div>
           </slot>
         {/if}
         {#each suggestedItems as item, index}
-          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[getSearchValue(item)]} on:mouseenter={() => selectedIndex = index} on:click={() => selectCurrentItem()} >
+          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[getSearchValue(item)]} on:mousemove={() => selectedIndex = index} on:click={() => selectCurrentItem()} >
             <slot name="suggest-item" item={item} isFirst={index === 0} isLast={index === suggestedItems.length - 1}>
               {getSearchValue(item)}
             </slot>
@@ -265,10 +287,6 @@
   .item {
     padding: 5px;
     cursor: pointer;
-  }
-
-  .item:hover {
-    background: #fafafa;
   }
 
   .item.selected {
