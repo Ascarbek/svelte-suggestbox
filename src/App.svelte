@@ -5,24 +5,27 @@
 
   let items = countries;
 
-  function onItemSelect() {
-
-  }
+  let selectedCountries = [];
 
 </script>
 
-<div>
+<div class="app">
   <div class="feature-field">
     <label>Group:</label>
-    <SuggestBox placeholder={"Type a name"} items={items} getSearchValue={item => item.name} onItemSelect={onItemSelect} allowNewItem={false}>
+    <SuggestBox placeholder={"Type a name"} items={items} getSearchValue={item => item.name} bind:selectedItems={selectedCountries} >
     </SuggestBox>
   </div>
 </div>
 
 <style>
+
+  .app {
+    padding-top: 50px;
+  }
+
   .feature-field {
-    width: 500px;
-    margin-bottom: 20px;
+    width: 600px;
+    margin: 0 auto 20px;
   }
 
   label {
