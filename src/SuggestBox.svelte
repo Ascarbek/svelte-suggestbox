@@ -4,9 +4,9 @@
   export let placeholder = '';
 
   export let items = [];
-  export let getItems = async value => items.filter(item => value && value.length && enableInput ? filter(item, value) : true).sort(sortComparator);
+  export let getItems = async value => items.filter(item => value && value.length && enableInput ? getValueIndex(item, value) > -1 : true).sort(sortComparator);
   export let getSearchValue = item => item;
-  export let filter = (item, value) => getSearchValue(item).toLowerCase().indexOf(value.toLowerCase()) > -1;
+  export let getValueIndex = (item, value) => getSearchValue(item).toLowerCase().indexOf(value.toLowerCase());
   export let sortComparator = (a, b) => getSearchValue(a) > getSearchValue(b) ? 1 : getSearchValue(a) < getSearchValue(b) ? -1 : 0;
   export let onItemSelect = item => multiSelect ? selectedItems = [...selectedItems, item] : selectedItem = item;
   export let onNewItem = item => console.log('new item:', item);
@@ -30,17 +30,20 @@
     if(selectedIndex === -1) return;
     if(suggestedItems[selectedIndex]) {
       onItemSelect(suggestedItems[selectedIndex]);
-      value = '';
     }
     else {
       onNewItem(value);
     }
+
+    value = '';
+    selectedIndex = -1;
+
     if(closeOnSelect) {
       closeDropDown();
     }
   }
 
-  function keydown(e) {
+  async function keydown(e) {
     switch (e.key) {
       case 'Enter':
       case 'Tab': {
@@ -99,12 +102,21 @@
   let timeoutHandle;
   let showLoader = false;
 
-  function startSearch(value) {
+  function startSearch(v) {
     showLoader = true;
     clearTimeout(timeoutHandle);
     timeoutHandle = setTimeout(async () => {
-      suggestedItems = await getItems(value)
+      suggestedItems = await getItems(v);
       showLoader = false;
+      if(suggestedItems.length === 1) {
+        selectedIndex = 0;
+        let start = input.selectionStart;
+        value = getSearchValue(suggestedItems[0]);
+
+        await tick();
+        input.selectionStart = getValueIndex(suggestedItems[0], v) + start;
+        input.selectionEnd = value.length;
+      }
     }, callDelay);
   }
 
