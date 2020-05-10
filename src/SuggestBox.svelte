@@ -96,7 +96,11 @@
   }
 
   function blur() {
-    !isHoveringDropDown ? closeDropDown() : null;
+    if(!isHoveringDropDown) {
+      closeDropDown();
+      selectedIndex = -1;
+      value = '';
+    }
   }
 
   let timeoutHandle;
@@ -302,12 +306,13 @@
   }
 
   .item.selected {
-    background: #cccccc;
+    background: #4092fc;
     color: white;
   }
 
   .item.current {
-    background: #fffbe6;
-    color: inherit;
+    background: #4092fc;
+    color: white;
+    text-decoration: underline;
   }
 </style>
