@@ -1,7 +1,10 @@
+# dependencies
 /node_modules/
-/public/build/
-
 .DS_Store
+
+# build
+/public/build/
+index.js
 
 # IDE
 .idea
@@ -9,3 +12,5 @@
 # machine specific
 package-lock.json
 yarn.lock
+
+/temp
