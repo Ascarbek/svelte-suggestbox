@@ -18,6 +18,7 @@
   export let closeOnSelect = true;
   export let selectedItem = {};
   export let selectedItems = [];
+  export let cls = '';
 
   let value = '';
   let showDropDown = false;
@@ -165,7 +166,7 @@
 
 </script>
 
-<div class="suggest-box">
+<div class="suggest-box {cls}">
   <div class="input" on:click={() => input.focus()}>
     <div class="selection">
       {#each selectedItems as item, index}

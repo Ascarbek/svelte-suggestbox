@@ -1,6 +1,6 @@
 {
   "name": "svelte-suggestbox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Autocomplete / Multiselect / Typeahead component made with Svelte",
   "main": "index.js",
   "svelte": "src/SuggestBox.svelte",
