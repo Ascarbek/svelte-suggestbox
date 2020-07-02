@@ -3,8 +3,8 @@
 .DS_Store
 
 # build
-/public/build/
-index.js
+/dist
+/demo/build
 
 # IDE
 .idea

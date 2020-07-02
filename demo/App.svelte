@@ -1,5 +1,5 @@
 <script>
-  import SuggestBox from './SuggestBox.svelte';
+  import SuggestBox from '../src/SuggestBox.svelte';
 
   import countries from './countries';
 
