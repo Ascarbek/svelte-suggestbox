@@ -27,7 +27,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c rollup.config.demo.js -w",
-    "start": "sirv public"
+    "start": "sirv demo"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "11.0.2",
