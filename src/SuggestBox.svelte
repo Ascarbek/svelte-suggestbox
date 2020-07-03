@@ -183,7 +183,7 @@
 
     <input bind:this={input} readonly={!enableInput} bind:value={value} on:keydown={keydown} on:focus={openDropDown} on:blur={blur} {placeholder} >
 
-    <button tabindex="-1">
+    <button tabindex="-1" data-testid="trigger-button">
       <slot name="trigger-button">
         <i class="trigger fa fa-angle-down"></i>
       </slot>
@@ -193,15 +193,15 @@
   {#if showDropDown}
     {#if showLoader && callDelay > 0}
       <slot name="fetching-msg">
-        <div class="loader">
+        <div class="loader" data-testid="fetching-msg">
           searching...
         </div>
       </slot>
     {:else}
-      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:click={() => input.focus()}>
+      <div bind:this={dropDown} class="drop-down" on:mouseenter={() => isHoveringDropDown = true} on:mouseleave={() => isHoveringDropDown = false} on:click={() => input.focus()} data-testid="drop-down">
         {#if suggestedItems.length}
           <slot name="result-count" count={suggestedItems.length}>
-            <div class="result-count">{suggestedItems.length} items found</div>
+            <div class="result-count"><span data-testid="result-count">{suggestedItems.length}</span> items found</div>
           </slot>
         {/if}
         {#each suggestedItems as item, index}
@@ -213,7 +213,7 @@
         {/each}
         {#if suggestedItems.length === 0}
           <slot name="no-results-msg">
-            <div class="not-found">no results found.</div>
+            <div class="not-found" data-testid="not-found-msg">no results found.</div>
           </slot>
         {/if}
       </div>
