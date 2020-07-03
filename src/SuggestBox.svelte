@@ -1,22 +1,27 @@
 <script>
-  import { onDestroy, tick } from 'svelte';
+  import { onDestroy, tick, createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+
+  const ON_ITEM_SELECTED_EVENT = 'onItemSelected';
+  const ON_NEW_ITEM_EVENT = 'onNewItem';
 
   export let placeholder = '';
 
   export let items = [];
-  export let getItems = async value => items.filter(item => value && value.length && enableInput ? getValueIndex(item, value) > -1 : true).sort(sortComparator);
-  export let getSearchValue = item => item;
-  export let getValueIndex = (item, value) => getSearchValue(item).toLowerCase().indexOf(value.toLowerCase());
-  export let sortComparator = (a, b) => getSearchValue(a) > getSearchValue(b) ? 1 : getSearchValue(a) < getSearchValue(b) ? -1 : 0;
-  export let onItemSelect = item => multiSelect ? selectedItems = [...selectedItems, item] : selectedItem = item;
-  export let onNewItem = item => console.log('new item:', item);
+  export let getSuggestedItems = async value => items.filter(item => value && value.length && enableInput ? indexOfValue(item, value) > -1 : true).sort(sortComparator);
+  export let lookupField = item => item;
+  export let indexOfValue = (item, value) => lookupField(item).toLowerCase().indexOf(value.toLowerCase());
+  export let sortComparator = (a, b) => lookupField(a) > lookupField(b) ? 1 : lookupField(a) < lookupField(b) ? -1 : 0;
+  let onItemSelect = item => dispatch(ON_ITEM_SELECTED_EVENT, item) || multiSelect ? selectedItems = [...selectedItems, item] : selectedItems = [item];
+  let onNewItem = item => dispatch(ON_NEW_ITEM_EVENT, item);
   export let callDelay = 0;
 
   export let enableInput = true;
   export let typeAhead = true;
   export let multiSelect = true;
   export let closeOnSelect = true;
-  export let selectedItem = {};
+  // export let selectedItem = {};
   export let selectedItems = [];
   export let cls = '';
 
@@ -111,15 +116,15 @@
     showLoader = true;
     clearTimeout(timeoutHandle);
     timeoutHandle = setTimeout(async () => {
-      suggestedItems = await getItems(v);
+      suggestedItems = await getSuggestedItems(v);
       showLoader = false;
       if(typeAhead && suggestedItems.length === 1) {
         selectedIndex = 0;
         let start = input.selectionStart;
-        value = getSearchValue(suggestedItems[0]);
+        value = lookupField(suggestedItems[0]);
 
         await tick();
-        input.selectionStart = getValueIndex(suggestedItems[0], v) + start;
+        input.selectionStart = indexOfValue(suggestedItems[0], v) + start;
         input.selectionEnd = value.length;
       }
     }, callDelay);
@@ -137,7 +142,7 @@
 
   $: {
     selectionMap = {};
-    selectedItems.forEach(i => selectionMap[getSearchValue(i)] = true)
+    selectedItems.forEach(i => selectionMap[lookupField(i)] = true)
   }
 
   let input, dropDown;
@@ -171,7 +176,7 @@
     <div class="selection">
       {#each selectedItems as item, index}
         <slot name="selected-item" item={item} isFirst={index === 0} isLast={index === selectedItems.length - 1}>
-          <div class="selected-item">{getSearchValue(item)}</div>
+          <div class="selected-item">{lookupField(item)}</div>
         </slot>
       {/each}
     </div>
@@ -200,9 +205,9 @@
           </slot>
         {/if}
         {#each suggestedItems as item, index}
-          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[getSearchValue(item)]} on:mousemove={() => selectedIndex = index} on:click={() => selectCurrentItem()} >
+          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[lookupField(item)]} on:mousemove={() => selectedIndex = index} on:click={() => selectCurrentItem()} >
             <slot name="suggest-item" item={item} isFirst={index === 0} isLast={index === suggestedItems.length - 1}>
-              {getSearchValue(item)}
+              {lookupField(item)}
             </slot>
           </div>
         {/each}

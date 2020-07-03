@@ -6,22 +6,26 @@
   let items = countries;
 
   let selectedCountries = [];
-  let selectedStatus = '';
+  let selectedStatus = [];
 
   let statuses = ['created', 'working', 'postponed'];
+
+  const countrySelected = e => {
+    console.log(e.detail);
+  }
 
 </script>
 
 <div class="app">
   <div class="feature-field">
     <label>Group:</label>
-    <SuggestBox placeholder={"Type a name"} items={countries} getSearchValue={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={false}>
+    <SuggestBox placeholder={"Type a name"} items={countries} lookupField={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={false} on:onItemSelected={countrySelected}>
     </SuggestBox>
   </div>
 
   <div class="feature-field">
     <label>Group:</label>
-    <SuggestBox placeholder={"Status"} items={statuses} bind:selectedItem={selectedStatus} multiSelect={false}>
+    <SuggestBox placeholder={"Status"} items={statuses} bind:selectedItems={selectedStatus} multiSelect={false}>
     </SuggestBox>
   </div>
 </div>
