@@ -74,7 +74,7 @@
 
   // allow multiple items selected
   export let multiSelect = true;
-
+  export let allowDuplicates = false;
   export let closeOnSelect = true;
   export let hideSelected = true;
 
@@ -102,6 +102,9 @@
   let input, dropDown;
 
   let selectItem = item => {
+    if(!allowDuplicates && multiSelect) {
+      selectedItems = selectedItems.filter(found => found[INDEX_FIELD] !== item[INDEX_FIELD])
+    }
     multiSelect ? selectedItems = [...selectedItems, item] : selectedItems = [item];
     dispatch(ON_ITEM_SELECTED_EVENT, item);
   }
@@ -113,6 +116,10 @@
 
     if(suggestedItems[index]) {
       selectItem(suggestedItems[index]);
+      if(hideSelected) {
+        const removeIndex = suggestedItems[index][INDEX_FIELD];
+        suggestedItems = suggestedItems.filter(item => item[INDEX_FIELD] !== removeIndex);
+      }
     }
     else {
       newItem(value);
@@ -389,19 +396,18 @@
     cursor: pointer;
   }
 
+  .item:hover {
+    background: #eeeeee;
+  }
+
   .item.selected {
-    background: #4092fc;
-    color: white;
+    background: #dddddd;
   }
 
   .item.current {
     background: #4092fc;
     color: white;
     text-decoration: underline;
-  }
-
-  .item:hover {
-    background: #eeeeee;
   }
 
   .item.hidden {
