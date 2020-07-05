@@ -1,51 +1,206 @@
 <script>
   import { onDestroy, tick, createEventDispatcher } from 'svelte';
 
+  /*
+  * Constant values for internal usage
+  * */
+
   const dispatch = createEventDispatcher();
 
+  const INDEX_FIELD = '$index$';
+  const SELECTED_FIELD = '$selected$';
+
   const ON_ITEM_SELECTED_EVENT = 'onItemSelected';
-  const ON_NEW_ITEM_EVENT = 'onNewItem';
+  const ON_NEW_ITEM_EVENT = 'newItem';
+
+  /*
+  * Component Props
+  * */
 
   export let placeholder = '';
 
+  // common usage as a dropdown
+  // provide with items if items are a fixed set
+  // all elements of items array have to be JSON objects
+  // if you have specific logic for showing items, you can redefine getSuggestedItems function below
+  // The component will modify items elements by adding $index$ and $selected$ fields for internal usage
+  // that way it can track which elements have been selected and avoid duplicate selection
   export let items = [];
-  export let getSuggestedItems = async value => items.filter(item => value && value.length && enableInput ? indexOfValue(item, value) > -1 : true).sort(sortComparator);
-  export let lookupField = item => item;
-  export let indexOfValue = (item, value) => lookupField(item).toLowerCase().indexOf(value.toLowerCase());
-  export let sortComparator = (a, b) => lookupField(a) > lookupField(b) ? 1 : lookupField(a) < lookupField(b) ? -1 : 0;
-  let onItemSelect = item => dispatch(ON_ITEM_SELECTED_EVENT, item) || multiSelect ? selectedItems = [...selectedItems, item] : selectedItems = [item];
-  let onNewItem = item => dispatch(ON_NEW_ITEM_EVENT, item);
+
+  $: validateItems(items);
+
+  const validateItems = a => a.forEach(b => {if(typeof b !== 'object') throw 'items array must have JSON objects as elements';});
+
+  // a field that will be used to search in when user is typing a text
+  // also this field's value is shown in dropdown
+  // by default it will use 'name' field but you can change it
+  // for example: displayField = {item => item.value}
+  export let displayField = item => item.name;
+
+  // function that return first occurrence of user typed text in the items element
+  // you can change this function if you use different way of getting occurrences
+  // for example if you need it to be case sensitive then change to:
+  // indexOfValue = { (item, value) => displayField(item).indexOf(value) }
+  // if you are not using indexOf then you'd better set typeahead to false
+  export let indexOfValue = (item, value) => displayField(item).toLowerCase().indexOf(value.toLowerCase());
+
+  // true false weather to show items element in the dropdown when user is typing
+  export let isSuggested = (item, value) => indexOfValue(item, value) > -1;
+
+  // default function that searches through items array above
+  // if you redefine this function then you'll have to take care of filtering and sorting
+  // in case of async call (e.g. http request) you have to redefine this function and also supply with non zero callDelay value
+  export let getSuggestedItems = async value => items
+          .map((item, index) => ({ ...item, [INDEX_FIELD]: index }))
+          .filter(item => hideSelected && selectionMap[item[INDEX_FIELD]] ? false : value && value.length && enableInput ? isSuggested(item, value) : true )
+          .sort(sortComparator);
+
+  // default behaviour is to sort alphabetically by 'name' field
+  // to preserve items order you can change to item => item.$index$
+  export let sortField = item => item.name;
+
+  // sorting function, default behaviour is to sort ascending
+  export let sortComparator = (a, b) => sortField(a) > sortField(b) ? 1 : sortField(a) < sortField(b) ? -1 : 0;
+
+  // delay between end of user typing and calling getSuggestedItems
   export let callDelay = 0;
 
+  // enable input component by default
+  // disable if you need combobox behaviour
   export let enableInput = true;
+
+  // if there is one suggestion then it will put the rest of the text into the input
   export let typeAhead = true;
+
+  // allow multiple items selected
   export let multiSelect = true;
+
   export let closeOnSelect = true;
-  // export let selectedItem = {};
+  export let hideSelected = true;
+
   export let selectedItems = [];
+  // export let selectedIds = [];
+
+  // custom css class that will be applied to root element
   export let cls = '';
+
+  /*
+  * Internal logic
+  * */
 
   let value = '';
   let showDropDown = false;
   let suggestedItems = [];
   let selectedIndex = -1;
   let isHoveringDropDown = false;
+  let selectionMap = {};
 
-  function selectCurrentItem() {
-    if(selectedIndex === -1) return;
-    if(suggestedItems[selectedIndex]) {
-      onItemSelect(suggestedItems[selectedIndex]);
+  let timeoutHandle;
+  let showLoader = false;
+
+  // DOM elements
+  let input, dropDown;
+
+  let selectItem = item => {
+    multiSelect ? selectedItems = [...selectedItems, item] : selectedItems = [item];
+    dispatch(ON_ITEM_SELECTED_EVENT, item);
+  }
+
+  let newItem = item => dispatch(ON_NEW_ITEM_EVENT, item);
+
+  function selectCurrentItem(index) {
+    if(index === -1) return;
+
+    if(suggestedItems[index]) {
+      selectItem(suggestedItems[index]);
     }
     else {
-      onNewItem(value);
+      newItem(value);
     }
 
     value = '';
-    selectedIndex = -1;
 
     if(closeOnSelect) {
       closeDropDown();
     }
+    selectedIndex = -1;
+  }
+
+  $: {
+    selectionMap = {};
+    selectedItems.forEach(i => typeof i[INDEX_FIELD] !== 'undefined' ? selectionMap[i[INDEX_FIELD]] = true : '')
+  }
+
+  $: {
+    showDropDown ? startSearch(value) : null;
+  }
+
+  function openDropDown(){
+    showDropDown = true;
+  }
+
+  function closeDropDown() {
+    showDropDown = false;
+    isHoveringDropDown = false;
+    selectedIndex = -1;
+  }
+
+  function blur() {
+    if(!isHoveringDropDown) {
+      closeDropDown();
+      value = '';
+    }
+  }
+
+  function startSearch(v) {
+    const fn = async () => {
+      suggestedItems = await getSuggestedItems(v);
+      showLoader = false;
+      if(typeAhead && suggestedItems.length === 1) {
+        selectedIndex = 0;
+        let start = input.selectionStart;
+        value = displayField(suggestedItems[0]);
+
+        await tick();
+        input.selectionStart = indexOfValue(suggestedItems[0], v) + start;
+        input.selectionEnd = value.length;
+      }
+    }
+    if(callDelay) {
+      showLoader = true;
+      clearTimeout(timeoutHandle);
+      timeoutHandle = setTimeout(fn, callDelay);
+    }
+    else {
+      fn();
+    }
+  }
+
+  onDestroy(() => {
+    clearTimeout(timeoutHandle);
+  });
+
+  async function scrollToCurrentItem(index) {
+    if(index < 0) return;
+    await tick();
+    if(!showDropDown) return;
+
+    const ddTop = dropDown.getBoundingClientRect().top;
+    const ddHeight = dropDown.getBoundingClientRect().height;
+
+    const itemTop = dropDown.querySelector('.current').getBoundingClientRect().top;
+    const itemHeight = dropDown.querySelector('.current').clientHeight;
+
+    if(itemTop + itemHeight > ddTop + ddHeight) {
+      dropDown.scrollTop = dropDown.scrollTop + itemTop + itemHeight - ddHeight - ddTop;
+    }
+    if(itemTop < ddTop) {
+      dropDown.scrollTop = dropDown.scrollTop - (ddTop - itemTop);
+    }
+  }
+
+  $: {
+    scrollToCurrentItem(selectedIndex);
   }
 
   async function keydown(e) {
@@ -53,7 +208,7 @@
       case 'Enter':
       case 'Tab': {
         isHoveringDropDown = false;
-        selectCurrentItem();
+        selectCurrentItem(selectedIndex);
       } break;
 
       case 'Escape': {
@@ -75,7 +230,7 @@
       } break;
 
       case 'Backspace': {
-        if(value.length === 0) {
+        if(value.length === 0 && selectedItems.length > 0) {
           selectedItems = selectedItems.slice(0, selectedItems.length - 1);
         }
         selectedIndex = -1;
@@ -92,91 +247,14 @@
     }
   }
 
-  function openDropDown(){
-    showDropDown = true;
-  }
-
-  function closeDropDown() {
-    showDropDown = false;
-    isHoveringDropDown = false;
-  }
-
-  function blur() {
-    if(!isHoveringDropDown) {
-      closeDropDown();
-      selectedIndex = -1;
-      value = '';
-    }
-  }
-
-  let timeoutHandle;
-  let showLoader = false;
-
-  function startSearch(v) {
-    showLoader = true;
-    clearTimeout(timeoutHandle);
-    timeoutHandle = setTimeout(async () => {
-      suggestedItems = await getSuggestedItems(v);
-      showLoader = false;
-      if(typeAhead && suggestedItems.length === 1) {
-        selectedIndex = 0;
-        let start = input.selectionStart;
-        value = lookupField(suggestedItems[0]);
-
-        await tick();
-        input.selectionStart = indexOfValue(suggestedItems[0], v) + start;
-        input.selectionEnd = value.length;
-      }
-    }, callDelay);
-  }
-
-  onDestroy(() => {
-    clearTimeout(timeoutHandle);
-  });
-
-  $: {
-    showDropDown ? startSearch(value) : null;
-  }
-
-  let selectionMap = {};
-
-  $: {
-    selectionMap = {};
-    selectedItems.forEach(i => selectionMap[lookupField(i)] = true)
-  }
-
-  let input, dropDown;
-
-  async function scrollToCurrentItem(index) {
-    if(index < 0) return;
-    await tick();
-
-    const ddTop = dropDown.getBoundingClientRect().top;
-    const ddHeight = dropDown.getBoundingClientRect().height;
-
-    const itemTop = dropDown.querySelector('.current').getBoundingClientRect().top;
-    const itemHeight = dropDown.querySelector('.current').clientHeight;
-
-    if(itemTop + itemHeight > ddTop + ddHeight) {
-      dropDown.scrollTop = dropDown.scrollTop + itemTop + itemHeight - ddHeight - ddTop;
-    }
-    if(itemTop < ddTop) {
-      dropDown.scrollTop = dropDown.scrollTop - (ddTop - itemTop);
-    }
-  }
-
-  $: {
-    scrollToCurrentItem(selectedIndex);
-  }
-
 </script>
 
-<div class="suggest-box {cls}">
+<div class="suggest-box {cls}" data-testid="component-root">
   <div class="input" on:click={() => input.focus()}>
-    <div class="selection">
+    <div class="selection" data-testid="selection">
       {#each selectedItems as item, index}
         <slot name="selected-item" item={item} isFirst={index === 0} isLast={index === selectedItems.length - 1}>
-          <div class="selected-item">{lookupField(item)}</div>
+          <div class="selected-item">{displayField(item)}</div>
         </slot>
       {/each}
     </div>
@@ -205,9 +283,9 @@
           </slot>
         {/if}
         {#each suggestedItems as item, index}
-          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[lookupField(item)]} on:mousemove={() => selectedIndex = index} on:click={() => selectCurrentItem()} >
+          <div class="item" class:current={index === selectedIndex} class:selected={selectionMap[item[INDEX_FIELD]]} on:click={() => selectCurrentItem(index)} >
             <slot name="suggest-item" item={item} isFirst={index === 0} isLast={index === suggestedItems.length - 1}>
-              {lookupField(item)}
+              {displayField(item)}
             </slot>
           </div>
         {/each}
@@ -320,5 +398,13 @@
     background: #4092fc;
     color: white;
     text-decoration: underline;
+  }
+
+  .item:hover {
+    background: #eeeeee;
+  }
+
+  .item.hidden {
+    display: none;
   }
 </style>

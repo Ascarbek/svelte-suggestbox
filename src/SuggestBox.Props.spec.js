@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/extend-expect'
 import { fireEvent, render } from "@testing-library/svelte";
+import { tick } from 'svelte';
 
 import SuggestBox from "./SuggestBox.svelte";
 
@@ -16,7 +17,7 @@ describe('SuggestBox props', () => {
     await fireEvent.focus(input);
 
     await fireEvent.input(input, { target: { value: 'test' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick();
     expect(getByText('testa')).toBeInTheDocument();
     expect(getByText('testb')).toBeInTheDocument();
     expect(getByText('testc')).toBeInTheDocument();
@@ -25,9 +26,15 @@ describe('SuggestBox props', () => {
     expect(dropDown.children.length).toBe(1 + 3); // result count el + items.length
   });
 
-  test('', async () => {
+  test('custom css class', async () => {
+    const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
+      cls: 'test class'
+    });
 
+    expect(getByTestId('component-root')).toHaveClass('test class');
   });
+
+
 });
 
 

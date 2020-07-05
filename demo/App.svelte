@@ -8,7 +8,7 @@
   let selectedCountries = [];
   let selectedStatus = [];
 
-  let statuses = ['created', 'working', 'postponed'];
+  let statuses = [{name: 'created'}, {name: 'working'}, {name: 'working'}, {name: 'postponed'}];
 
   const countrySelected = e => {
     console.log(e.detail);
@@ -19,7 +19,7 @@
 <div class="app">
   <div class="feature-field">
     <label>Group:</label>
-    <SuggestBox placeholder={"Type a name"} items={countries} lookupField={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={false} on:onItemSelected={countrySelected}>
+    <SuggestBox placeholder={"Type a name"} items={countries} displayField={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={false} on:onItemSelected={countrySelected}>
     </SuggestBox>
   </div>
 

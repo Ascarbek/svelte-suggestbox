@@ -23,8 +23,10 @@ describe('SuggestBox User Interaction events', () => {
     const input = getByPlaceholderText(PLACEHOLDER_TEXT);
     expect(() => getByTestId('drop-down')).toThrow();
     await fireEvent.focus(input);
+    await tick();
     expect(getByTestId('drop-down')).toBeInTheDocument();
     await fireEvent.blur(input);
+    await tick();
     expect(() => getByTestId('drop-down')).toThrow();
   });
 
@@ -34,13 +36,15 @@ describe('SuggestBox User Interaction events', () => {
     const button = getByTestId('trigger-button');
     expect(() => getByTestId('drop-down')).toThrow();
     await fireEvent.click(button);
+    await tick();
     expect(getByTestId('drop-down')).toBeInTheDocument();
     await fireEvent.click(button);
+    await tick();
     expect(getByTestId('drop-down')).toBeInTheDocument();
   });
 
   test('for dropdown elements to match supplied items', async () => {
-    const items = ['item1', 'item2', 'item3'];
+    const items = [{name:'item1'}, {name:'item2'}, {name:'item3'}];
 
     const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
       placeholder: PLACEHOLDER_TEXT,
@@ -50,18 +54,18 @@ describe('SuggestBox User Interaction events', () => {
     const button = getByTestId('trigger-button');
     await fireEvent.click(button);
 
-    await waitFor(() => expect(getByTestId('drop-down').children.length).toBeGreaterThan(1));
+    await tick();
 
     const dropDown = getByTestId('drop-down');
     expect(dropDown.children.length).toBe(1 + items.length); // result count el + items.length
 
     items.forEach(item => {
-      expect(getByText(item)).toBeInTheDocument();
+      expect(getByText(item.name)).toBeInTheDocument();
     });
   });
 
   test('for default search', async () => {
-    const items = ['aaa', 'bbb', 'ccc'];
+    const items = [{name:'aaa'}, {name:'bbb'}, {name:'ccc'}];
 
     const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
       placeholder: PLACEHOLDER_TEXT,
@@ -72,33 +76,32 @@ describe('SuggestBox User Interaction events', () => {
     await fireEvent.focus(input);
 
     await fireEvent.input(input, { target: { value: 'a' } });
-    await new Promise(r => setTimeout(() => r(), 100));
-
+    await tick()
     expect(getByText('aaa')).toBeInTheDocument();
     expect(() => getByText('bbb')).toThrow();
     expect(() => getByText('ccc')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'b' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(() => getByText('aaa')).toThrow();
     expect(getByText('bbb')).toBeInTheDocument();
     expect(() => getByText('ccc')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'c' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(() => getByText('aaa')).toThrow();
     expect(() => getByText('bbb')).toThrow();
     expect(getByText('ccc')).toBeInTheDocument();
 
     await fireEvent.input(input, { target: { value: 'd' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(() => getByText('aaa')).toThrow();
     expect(() => getByText('bbb')).toThrow();
     expect(() => getByText('ccc')).toThrow();
   });
 
   test('result count and not found messages', async () => {
-    const items = ['aaa', 'aab', 'abc'];
+    const items = [{name:'aaa'}, {name:'aab'}, {name:'abc'}];
 
     const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
       placeholder: PLACEHOLDER_TEXT,
@@ -107,27 +110,27 @@ describe('SuggestBox User Interaction events', () => {
 
     const input = getByPlaceholderText(PLACEHOLDER_TEXT);
     await fireEvent.focus(input);
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(getByTestId('result-count')).toHaveTextContent(items.length.toString());
     expect(() => getByTestId('not-found-msg')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'a' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(getByTestId('result-count')).toHaveTextContent('3');
     expect(() => getByTestId('not-found-msg')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'b' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(getByTestId('result-count')).toHaveTextContent('2');
     expect(() => getByTestId('not-found-msg')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'c' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(getByTestId('result-count')).toHaveTextContent('1');
     expect(() => getByTestId('not-found-msg')).toThrow();
 
     await fireEvent.input(input, { target: { value: 'd' } });
-    await new Promise(r => setTimeout(() => r(), 100));
+    await tick()
     expect(() => getByTestId('result-count')).toThrow();
     expect(getByTestId('not-found-msg')).toBeInTheDocument();
   });
@@ -139,13 +142,60 @@ describe('SuggestBox User Interaction events', () => {
 
     const button = getByTestId('trigger-button');
     await fireEvent.click(button);
-    await new Promise(r => setTimeout(() => r(), 100));
-
+    await tick();
     expect(getByTestId('fetching-msg')).toBeInTheDocument();
 
-    await new Promise(r => setTimeout(() => r(), 500));
-
+    await new Promise(r => setTimeout(() => r(), 600));
     expect(() => getByTestId('fetching-msg')).toThrow();
+  });
+
+  test('key down events on input', async () => {
+    const items = [{name:'item1'}, {name:'item2'}, {name:'item3'}, {name:'item4'}];
+    const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
+      placeholder: PLACEHOLDER_TEXT,
+      items,
+    });
+
+    const input = getByPlaceholderText(PLACEHOLDER_TEXT);
+    await fireEvent.focus(input);
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByText('item1')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByText('item2')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByText('item3')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByText('item4')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByText('item4')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(getByText('item3')).toHaveClass('current');
+
+    await fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(getByTestId('selection').children.length).toBe(1);
+    expect(getByTestId('selection').children[0].innerHTML).toBe('item3');
+
+    await fireEvent.keyDown(input, { key: 'Backspace' });
+    expect(getByTestId('selection').children.length).toBe(0);
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    await fireEvent.keyDown(input, { key: 'Enter' });
+    await tick();
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    await fireEvent.keyDown(input, { key: 'Tab' });
+    await tick();
+    expect(getByTestId('selection').children.length).toBe(2);
+
+    expect(getByTestId('selection').children[0].innerHTML).toBe('item1');
+    expect(getByTestId('selection').children[1].innerHTML).toBe('item3');
   });
 });
 
