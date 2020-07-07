@@ -149,7 +149,7 @@ describe('SuggestBox User Interaction events', () => {
     expect(() => getByTestId('fetching-msg')).toThrow();
   });
 
-  test('key down events on input', async () => {
+  test('moving up and down, selecting and removing using keyboard', async () => {
     const items = [{name:'item1'}, {name:'item2'}, {name:'item3'}, {name:'item4'}];
     const { getByTestId, getByText, getByPlaceholderText } = render(SuggestBox, {
       placeholder: PLACEHOLDER_TEXT,
@@ -187,16 +187,43 @@ describe('SuggestBox User Interaction events', () => {
 
     await fireEvent.keyDown(input, { key: 'ArrowDown' });
     await fireEvent.keyDown(input, { key: 'Enter' });
-    await tick();
+
     await fireEvent.keyDown(input, { key: 'ArrowDown' });
     await fireEvent.keyDown(input, { key: 'ArrowDown' });
     await fireEvent.keyDown(input, { key: 'Tab' });
-    await tick();
+
     expect(getByTestId('selection').children.length).toBe(2);
 
     expect(getByTestId('selection').children[0].innerHTML).toBe('item1');
     expect(getByTestId('selection').children[1].innerHTML).toBe('item3');
+
+    await fireEvent.keyDown(input, { key: 'Backspace' });
+    expect(getByTestId('selection').children.length).toBe(1);
+    expect(getByTestId('selection').children[0].innerHTML).toBe('item1');
+
+    await fireEvent.keyDown(input, { key: 'Backspace' });
+    expect(getByTestId('selection').children.length).toBe(0);
+
+    await fireEvent.input(input, { target: { value: 'item' } });
+
+    expect(input.value).toBe('item');
+
+    await fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(() => getByTestId('drop-down')).toThrow();
+    expect(input.value).toBe('');
+
+    await fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(getByTestId('drop-down')).toBeInTheDocument();
+
+    await fireEvent.keyDown(input, { key: 'Escape' });
+    expect(() => getByTestId('drop-down')).toThrow();
+
+    await fireEvent.keyDown(input, { key: 'i' });
+    expect(getByTestId('drop-down')).toBeInTheDocument();
   });
+
+
 });
 
 

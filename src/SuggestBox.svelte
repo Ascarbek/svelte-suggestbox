@@ -247,7 +247,8 @@
       default: {
         if(e.key.length === 1) {
           selectedIndex = -1;
-          dropDown.scrollTop = 0;
+          if(dropDown)
+            dropDown.scrollTop = 0;
           openDropDown();
         }
       } break;
