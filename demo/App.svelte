@@ -19,19 +19,27 @@
 </script>
 
 <div class="app">
-  <div class="feature-field">
+  <div class="field">
+    <label>simple usage:</label>
+    <SuggestBox
+            placeholder={"Select an item"}
+            items={[{"name": "item1"}, {"name": "item2"}]}
+    />
+  </div>
+
+  <div class="field">
     <label>Group:</label>
-    <SuggestBox placeholder={"Type a name"} allowDuplicates={true} hideSelected={true} items={countries} displayField={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={false} on:onItemSelected={countrySelected}>
+    <SuggestBox placeholder={"Type a name"} allowDuplicates={false} hideSelected={false} items={countries} displayField={item => item.name} bind:selectedItems={selectedCountries} closeOnSelect={true} on:onItemSelected={countrySelected}>
     </SuggestBox>
   </div>
 
-  <div class="feature-field">
+  <div class="field">
     <label>Group:</label>
     <SuggestBox placeholder={"Status"} items={statuses} bind:selectedItems={selectedStatus} multiSelect={false}>
     </SuggestBox>
   </div>
 
-  <div class="feature-field">
+  <div class="field">
     <label>Group:</label>
     <SuggestBox placeholder={"Status"} items={test1} >
     </SuggestBox>
@@ -44,13 +52,14 @@
     padding-top: 50px;
   }
 
-  .feature-field {
+  .field {
     width: 600px;
     margin: 0 auto 20px;
   }
 
   label {
     margin-bottom: 10px;
+    display: block;
   }
 
   button {

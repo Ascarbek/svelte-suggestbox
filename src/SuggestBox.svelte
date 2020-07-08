@@ -73,13 +73,12 @@
   export let typeAhead = true;
 
   // allow multiple items selected
-  export let multiSelect = true;
+  export let multiSelect = false;
   export let allowDuplicates = false;
   export let closeOnSelect = true;
   export let hideSelected = true;
 
   export let selectedItems = [];
-  // export let selectedIds = [];
 
   // custom css class that will be applied to root element
   export let cls = '';
@@ -163,14 +162,17 @@
     const fn = async () => {
       suggestedItems = await getSuggestedItems(v);
       showLoader = false;
-      if(typeAhead && suggestedItems.length === 1) {
+      if(suggestedItems.length === 1) {
         selectedIndex = 0;
-        let start = input.selectionStart;
-        value = displayField(suggestedItems[0]);
 
-        await tick();
-        input.selectionStart = indexOfValue(suggestedItems[0], v) + start;
-        input.selectionEnd = value.length;
+        if(typeAhead && value.length > 0) {
+          let start = input.selectionStart;
+          value = displayField(suggestedItems[0]);
+
+          await tick();
+          input.selectionStart = indexOfValue(suggestedItems[0], v) + start;
+          input.selectionEnd = value.length;
+        }
       }
     }
     if(callDelay) {
