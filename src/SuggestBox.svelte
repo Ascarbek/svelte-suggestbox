@@ -263,7 +263,7 @@
   <div class="input" on:click={() => input.focus()}>
     <div class="selection" data-testid="selection">
       {#each selectedItems as item, index}
-        <slot name="selected-item" item={item} isFirst={index === 0} isLast={index === selectedItems.length - 1}>
+        <slot name="selected-item" item={item} index={index} isFirst={index === 0} isLast={index === selectedItems.length - 1}>
           <div class="selected-item">{displayField(item)}</div>
         </slot>
       {/each}
