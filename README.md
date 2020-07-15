@@ -75,3 +75,11 @@ Examples available at
 | suggest-item | dropdown item ||
 | no-results-msg | shows when there are no dropdown items found ||
 
+## TODO:
+- examples page on gh-pages
+- demo page
+- test mouse events
+- test slots
+- css variables for colors, width etc with fallback values
+- typeAhead match from beginning only
+-
